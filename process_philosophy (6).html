@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Process Philosophy — Becoming</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inconsolata:wght@300;400&display=swap');
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #04040e;
+  overflow: hidden;
+  font-family: 'Inconsolata', monospace;
+  color: #bbb;
+  user-select: none;
+}
+
+canvas { display: block; }
+
+/* ── Unified Right Panel ── */
+#panel {
+  position: fixed;
+  top: 0; right: 0;
+  width: 230px;
+  height: 100vh;
+  background: rgba(4,4,20,0.94);
+  border-left: 1px solid #1e1e3a;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index: 10;
+}
+#panel.collapsed { transform: translateX(230px); }
+
+#collapseBtn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 32px;
+  height: 32px;
+  background: rgba(4,4,20,0.95);
+  border: 1px solid #3a2a5a;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #8E44AD;
+  font-size: 12px;
+  z-index: 20;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 0 8px #8E44AD44;
+}
+#collapseBtn:hover {
+  border-color: #C39BD3;
+  color: #C39BD3;
+  box-shadow: 0 0 14px #8E44AD88;
+}
+
+#panelInner {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px 20px;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a4a transparent;
+}
+#panelInner::-webkit-scrollbar { width: 3px; }
+#panelInner::-webkit-scrollbar-thumb { background: #2a2a4a; }
+
+h1 {
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #9B59B6;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 4px;
+  color: #2a2a4a;
+  text-transform: uppercase;
+  margin-bottom: 18px;
+}
+
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 7px;
+  letter-spacing: 3px;
+  color: #2e2e50;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #1e1e3a, transparent);
+  margin: 14px 0;
+}
+
+.ctrl { margin-bottom: 11px; }
+.ctrl .lbl {
+  font-size: 10px;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  letter-spacing: 1px;
+}
+.ctrl .lbl .val { color: #C39BD3; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 2px;
+  background: #1a1a2e;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #8E44AD;
+  cursor: pointer;
+  box-shadow: 0 0 6px #8E44AD88;
+}
+input[type=range]::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: #8E44AD;
+  cursor: pointer;
+  border: none;
+}
+
+.btns { display: flex; gap: 6px; margin-top: 14px; }
+.ctrl-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #2a2a4a;
+  color: #777;
+  padding: 7px 4px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: 'Inconsolata', monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover { border-color: #8E44AD; color: #C39BD3; }
+.ctrl-btn.active { border-color: #FFD700; color: #FFD700; }
+
+.leg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  color: #555;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.leg-dot { border-radius: 50%; flex-shrink: 0; }
+.leg-dot.glow { box-shadow: 0 0 5px currentColor; }
+.leg-count { margin-left: auto; color: #888; min-width: 24px; text-align: right; font-size: 10px; }
+
+.srow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #444;
+  margin-bottom: 5px;
+  letter-spacing: 1px;
+  font-size: 10px;
+}
+.srow .sv { color: #aaa; }
+.srow.total { color: #777; border-top: 1px solid #1a1a2e; padding-top: 7px; margin-top: 5px; }
+.srow.total .sv { color: #C39BD3; }
+
+#evlines { min-height: 60px; }
+.ev {
+  margin-bottom: 4px;
+  letter-spacing: 0.5px;
+  font-size: 9px;
+  opacity: 1;
+  transition: opacity 3s;
+  line-height: 1.5;
+}
+.ev.joyful { color: #9B59B6; }
+.ev.sad    { color: #7a3030; }
+.ev.fading { opacity: 0; }
+
+/* ── Population chart ── */
+#chartLegend {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.cl { display: flex; align-items: center; gap: 5px; font-size: 9px; color: #555; letter-spacing: 1px; }
+.cl-line { width: 12px; height: 2px; border-radius: 1px; }
+#chartCanvas { display: block; width: 100%; border: 1px solid #0e0e20; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="panel">
+  <button id="collapseBtn">◀</button>
+  <div id="panelInner">
+
+    <h1>Becoming</h1>
+    <h2>Process Philosophy</h2>
+
+    <div class="section-title">Parameters</div>
+    <div class="ctrl">
+      <div class="lbl">NASCENT ENTITIES <span class="val" id="vCount">300</span></div>
+      <input type="range" id="sCount" min="1" max="600" value="300">
+    </div>
+    <div class="ctrl">
+      <div class="lbl">SAD ANGLE <span class="val" id="vAngle">30°</span></div>
+      <input type="range" id="sAngle" min="1" max="89" value="30">
+    </div>
+    <div class="ctrl">
+      <div class="lbl">SPEED <span class="val" id="vSpeed">5</span></div>
+      <input type="range" id="sSpeed" min="0.2" max="15" step="0.1" value="5">
+    </div>
+    <div class="ctrl">
+      <div class="lbl">MATURE OFFSPRING <span class="val" id="vMature">4</span></div>
+      <input type="range" id="sMature" min="0" max="7" step="1" value="4">
+    </div>
+    <div class="ctrl">
+      <div class="lbl">ASCENDED OFFSPRING <span class="val" id="vAscended">7</span></div>
+      <input type="range" id="sAscended" min="0" max="30" step="1" value="7">
+    </div>
+    <div class="btns">
+      <button class="ctrl-btn" id="btnPlay">Pause</button>
+      <button class="ctrl-btn" id="btnReset">Reset</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Entities</div>
+    <div class="leg"><div class="leg-dot" style="width:7px;height:7px;background:#FFD700"></div>NASCENT<span class="leg-count" id="lc0">0</span></div>
+    <div class="leg"><div class="leg-dot" style="width:7px;height:7px;background:#FF8C00"></div>MATURE · 1<span class="leg-count" id="lc1">0</span></div>
+    <div class="leg"><div class="leg-dot" style="width:7px;height:7px;background:#FF4500"></div>MATURE · 2<span class="leg-count" id="lc2">0</span></div>
+    <div class="leg"><div class="leg-dot" style="width:7px;height:7px;background:#CC0000"></div>MATURE · 3<span class="leg-count" id="lc3">0</span></div>
+    <div class="leg"><div class="leg-dot glow" style="width:7px;height:7px;background:#C39BD3;color:#C39BD3"></div>ASCENDED · 1<span class="leg-count" id="lc4">0</span></div>
+    <div class="leg"><div class="leg-dot glow" style="width:7px;height:7px;background:#8E44AD;color:#8E44AD"></div>ASCENDED · 2<span class="leg-count" id="lc5">0</span></div>
+    <div class="leg"><div class="leg-dot glow" style="width:7px;height:7px;background:#5B2C6F;color:#9B59B6;border:1px solid #3d1f5a"></div>ASCENDED · 3<span class="leg-count" id="lc6">0</span></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Tally</div>
+    <div id="sContent">
+      <div class="srow"><span>JOYFUL</span><span class="sv" id="tJoyful">0</span></div>
+      <div class="srow"><span>SAD</span><span class="sv" id="tSad">0</span></div>
+      <div class="srow total"><span>TOTAL</span><span class="sv" id="tTotal">0</span></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Events</div>
+    <div id="evlines"></div>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Population</div>
+    <div id="chartLegend">
+      <div class="cl"><div class="cl-line" style="background:#4a90d9"></div>TOTAL</div>
+      <div class="cl"><div class="cl-line" style="background:#FFD700"></div>NASCENT</div>
+      <div class="cl"><div class="cl-line" style="background:#FF8C00"></div>MATURE</div>
+      <div class="cl"><div class="cl-line" style="background:#C39BD3"></div>ASCENDED</div>
+    </div>
+    <canvas id="chartCanvas" width="198" height="80"></canvas>
+
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const W = 4000, H = 3000;
+let sw, sh, sx, sy;
+
+function resize() {
+  canvas.width  = sw = window.innerWidth;
+  canvas.height = sh = window.innerHeight;
+  sx = sw / W; sy = sh / H;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const STAGES = [
+  { label:'n',  color:'#FFD700', r: 5,  glow:null      },
+  { label:'m1', color:'#FF8C00', r: 7,  glow:null      },
+  { label:'m2', color:'#FF4500', r: 9,  glow:null      },
+  { label:'m3', color:'#CC0000', r:11,  glow:null      },
+  { label:'a1', color:'#C39BD3', r:14,  glow:'#C39BD3' },
+  { label:'a2', color:'#8E44AD', r:17,  glow:'#8E44AD' },
+  { label:'a3', color:'#5B2C6F', r:20,  glow:'#9B59B6' },
+];
+const MAX_R = 20;
+const CELL  = MAX_R * 2 + 4;
+
+let eid = 0, entities = [], running = true;
+let totalJoyful = 0, totalSad = 0;
+let cfg = { count:300, angleDeg:30, speed:5, matureOffspring:4, ascendedOffspring:7 };
+
+function makeEnt(si, x, y, vx, vy) {
+  return { id: eid++, si, x, y, vx, vy, alive: true };
+}
+function randAngle() { return Math.random() * Math.PI * 2; }
+function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+// Spawn n nascent entities spread radially — prevents instant re-collision
+function spawnOffspring(n, cx, cy) {
+  const out = [];
+  const r0  = STAGES[0].r;
+  const spread = r0 * 3.5;
+  for (let i = 0; i < n; i++) {
+    const a  = (Math.PI * 2 * i / n) + (Math.random() - 0.5) * 0.25;
+    const ox = clamp(cx + Math.cos(a) * spread, r0, W - r0);
+    const oy = clamp(cy + Math.sin(a) * spread, r0, H - r0);
+    out.push(makeEnt(0, ox, oy, Math.cos(a)*cfg.speed, Math.sin(a)*cfg.speed));
+  }
+  return out;
+}
+
+function reset() {
+  entities = []; eid = 0; totalJoyful = 0; totalSad = 0;
+  chartHistory = []; frameCount = 0; smoothMax = 1;
+  document.getElementById('evlines').innerHTML = '';
+  for (let i = 0; i < cfg.count; i++) {
+    const r = STAGES[0].r, a = randAngle();
+    entities.push(makeEnt(0,
+      r + Math.random()*(W-2*r),
+      r + Math.random()*(H-2*r),
+      Math.cos(a)*cfg.speed, Math.sin(a)*cfg.speed
+    ));
+  }
+}
+
+// Controls
+function bindSlider(sid, vid, key, fmt) {
+  document.getElementById(sid).addEventListener('input', function() {
+    cfg[key] = parseFloat(this.value);
+    document.getElementById(vid).textContent = fmt ? fmt(cfg[key]) : cfg[key];
+    if (key === 'speed') entities.forEach(e => {
+      const m = Math.hypot(e.vx, e.vy);
+      if (m > 1e-9) { e.vx = e.vx/m*cfg.speed; e.vy = e.vy/m*cfg.speed; }
+    });
+  });
+}
+bindSlider('sCount','vCount','count', null);
+bindSlider('sAngle','vAngle','angleDeg', v => v+'°');
+bindSlider('sSpeed','vSpeed','speed', null);
+bindSlider('sMature','vMature','matureOffspring', null);
+bindSlider('sAscended','vAscended','ascendedOffspring', null);
+
+document.getElementById('btnPlay').addEventListener('click', function() {
+  running = !running;
+  this.textContent = running ? 'Pause' : 'Play';
+  this.classList.toggle('active', !running);
+  if (running) loop();
+});
+document.getElementById('btnReset').addEventListener('click', () => {
+  reset();
+  if (!running) {
+    running = true;
+    document.getElementById('btnPlay').textContent = 'Pause';
+    document.getElementById('btnPlay').classList.remove('active');
+    loop();
+  }
+});
+
+// Collapse
+let collapsed = false;
+document.getElementById('collapseBtn').addEventListener('click', function() {
+  collapsed = !collapsed;
+  document.getElementById('panel').classList.toggle('collapsed', collapsed);
+  this.textContent = collapsed ? '▶' : '◀';
+});
+
+// Event log
+const evlines = document.getElementById('evlines');
+function logEvent(type, aLbl, bLbl) {
+  const div = document.createElement('div');
+  div.className = `ev ${type}`;
+  div.textContent = type === 'joyful'
+    ? `✦ ${aLbl} + ${bLbl}`
+    : `✕ ${aLbl} × ${bLbl}`;
+  evlines.insertBefore(div, evlines.firstChild);
+  setTimeout(() => div.classList.add('fading'), 3000);
+  setTimeout(() => div.remove(), 6000);
+  while (evlines.children.length > 8) evlines.lastChild.remove();
+}
+
+// Simulation
+function update() {
+  for (const e of entities) {
+    if (!e.alive) continue;
+    e.x += e.vx; e.y += e.vy;
+    const r = STAGES[e.si].r;
+    if (e.x < r)   { e.x = r;   e.vx =  Math.abs(e.vx); }
+    if (e.x > W-r) { e.x = W-r; e.vx = -Math.abs(e.vx); }
+    if (e.y < r)   { e.y = r;   e.vy =  Math.abs(e.vy); }
+    if (e.y > H-r) { e.y = H-r; e.vy = -Math.abs(e.vy); }
+  }
+
+  const hash = new Map();
+  for (const e of entities) {
+    if (!e.alive) continue;
+    const k = `${(e.x/CELL)|0},${(e.y/CELL)|0}`;
+    if (!hash.has(k)) hash.set(k, []);
+    hash.get(k).push(e);
+  }
+
+  const toAdd = [], checked = new Set();
+  for (const e of entities) {
+    if (!e.alive) continue;
+    const cx = (e.x/CELL)|0, cy = (e.y/CELL)|0;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const cell = hash.get(`${cx+dx},${cy+dy}`);
+        if (!cell) continue;
+        for (const o of cell) {
+          if (o === e || !o.alive || !e.alive) continue;
+          const pk = e.id < o.id ? `${e.id}-${o.id}` : `${o.id}-${e.id}`;
+          if (checked.has(pk)) continue;
+          checked.add(pk);
+          if (Math.hypot(e.x-o.x, e.y-o.y) >= STAGES[e.si].r + STAGES[o.si].r) continue;
+          collide(e, o, toAdd);
+        }
+      }
+    }
+  }
+  entities = entities.filter(e => e.alive);
+  entities.push(...toAdd);
+}
+
+function collide(a, b, toAdd) {
+  const ma = Math.hypot(a.vx, a.vy), mb = Math.hypot(b.vx, b.vy);
+  let sad = false;
+  if (ma > 1e-9 && mb > 1e-9) {
+    const dot = (a.vx/ma)*(b.vx/mb) + (a.vy/ma)*(b.vy/mb);
+    sad = dot < -Math.cos(cfg.angleDeg * Math.PI / 180);
+  }
+
+  const topSi = Math.max(a.si, b.si);
+  const cx = (a.x+b.x)/2, cy = (a.y+b.y)/2;
+
+  let nvx = (a.vx+b.vx)/2, nvy = (a.vy+b.vy)/2;
+  const nm = Math.hypot(nvx, nvy);
+  if (nm > 1e-9) { nvx = nvx/nm*cfg.speed; nvy = nvy/nm*cfg.speed; }
+  else { const ag = randAngle(); nvx = Math.cos(ag)*cfg.speed; nvy = Math.sin(ag)*cfg.speed; }
+
+  a.alive = false; b.alive = false;
+
+  if (sad) {
+    totalSad++;
+    const n = topSi === 0 ? 0 : topSi <= 3 ? cfg.matureOffspring : cfg.ascendedOffspring;
+    toAdd.push(...spawnOffspring(n, cx, cy));
+    logEvent('sad', STAGES[a.si].label.toUpperCase(), STAGES[b.si].label.toUpperCase());
+  } else {
+    totalJoyful++;
+    if (topSi === 6) {
+      // a3 joyful → ascendedOffspring nascent, spread radially
+      toAdd.push(...spawnOffspring(cfg.ascendedOffspring, cx, cy));
+      logEvent('joyful', 'A3', `n×${cfg.ascendedOffspring}`);
+    } else {
+      toAdd.push(makeEnt(topSi+1, cx, cy, nvx, nvy));
+      logEvent('joyful', STAGES[a.si].label.toUpperCase(), STAGES[topSi+1].label.toUpperCase());
+    }
+  }
+}
+
+// ── Population chart ─────────────────────────────────────────────────────────
+const chartCanvas = document.getElementById('chartCanvas');
+const cctx        = chartCanvas.getContext('2d');
+const CW = 198, CH = 80;
+const MAX_SAMPLES = CW; // one pixel per sample
+let chartHistory = [];
+let frameCount   = 0;
+let smoothMax    = 1;
+const SAMPLE_EVERY = 4; // sample every N frames
+
+function recordSample() {
+  let total = entities.length, nascent = 0, mature = 0, ascended = 0;
+  entities.forEach(e => {
+    if (e.si === 0)              nascent++;
+    if (e.si >= 1 && e.si <= 3) mature++;
+    if (e.si >= 4)              ascended++;
+  });
+  chartHistory.push({ total, nascent, mature, ascended });
+  if (chartHistory.length > MAX_SAMPLES) chartHistory.shift();
+}
+
+function drawChart() {
+  cctx.clearRect(0, 0, CW, CH);
+
+  // Background grid lines
+  cctx.strokeStyle = '#0e0e20';
+  cctx.lineWidth = 1;
+  for (let y = 0; y <= 4; y++) {
+    const py = Math.round(CH * y / 4) + 0.5;
+    cctx.beginPath(); cctx.moveTo(0, py); cctx.lineTo(CW, py); cctx.stroke();
+  }
+
+  if (chartHistory.length < 2) return;
+
+  const actualMax = Math.max(...chartHistory.map(s => s.total), 1);
+  // Snap up to new peaks immediately, decay slowly downward
+  smoothMax = smoothMax < actualMax ? actualMax : smoothMax * 0.995 + actualMax * 0.005;
+  smoothMax = Math.max(smoothMax, 1);
+  const maxTotal = smoothMax;
+
+  function plotLine(key, color, lineWidth) {
+    cctx.beginPath();
+    cctx.strokeStyle = color;
+    cctx.lineWidth   = lineWidth;
+    cctx.lineJoin    = 'round';
+    chartHistory.forEach((s, i) => {
+      const x = (i / (MAX_SAMPLES - 1)) * CW;
+      const y = CH - (s[key] / maxTotal) * (CH - 4) - 2;
+      i === 0 ? cctx.moveTo(x, y) : cctx.lineTo(x, y);
+    });
+    cctx.stroke();
+  }
+
+  plotLine('total',    '#4a90d9', 1.5);
+  plotLine('nascent',  '#FFD700', 1.2);
+  plotLine('mature',   '#FF8C00', 1.2);
+  plotLine('ascended', '#C39BD3', 1.5);
+
+  // Peak label on total
+  const peak = Math.max(...chartHistory.map(s => s.total));
+  cctx.fillStyle = '#2a4a6a';
+  cctx.font = '8px Inconsolata, monospace';
+  cctx.fillText(`peak ${peak}`, 3, 10);
+  // Current total
+  const last = chartHistory[chartHistory.length-1];
+  cctx.fillStyle = '#4a90d9';
+  cctx.fillText(`now ${last.total}`, CW - 46, 10);
+}
+
+function draw() {
+  ctx.fillStyle = '#04040e';
+  ctx.fillRect(0, 0, sw, sh);
+  const scale = Math.min(sx, sy);
+
+  for (let pass = 0; pass < 2; pass++) {
+    for (const e of entities) {
+      const s = STAGES[e.si], isGlow = s.glow !== null;
+      if (pass === 0 && isGlow)  continue;
+      if (pass === 1 && !isGlow) continue;
+      const px = e.x*sx, py = e.y*sy, pr = Math.max(s.r*scale, 1.2);
+      if (isGlow) { ctx.shadowColor = s.glow; ctx.shadowBlur = pr*2.5; }
+      ctx.beginPath();
+      ctx.arc(px, py, pr, 0, Math.PI*2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      if (isGlow) ctx.shadowBlur = 0;
+    }
+  }
+
+  const counts = [0,0,0,0,0,0,0];
+  entities.forEach(e => counts[e.si]++);
+  for (let i = 0; i < 7; i++) document.getElementById(`lc${i}`).textContent = counts[i];
+  document.getElementById('tJoyful').textContent = totalJoyful;
+  document.getElementById('tSad').textContent    = totalSad;
+  document.getElementById('tTotal').textContent  = entities.length;
+
+  // Chart
+  frameCount++;
+  if (frameCount % SAMPLE_EVERY === 0) recordSample();
+  drawChart();
+}
+
+function loop() {
+  if (!running) return;
+  update(); draw();
+  requestAnimationFrame(loop);
+}
+
+reset();
+loop();
+</script>
+</body>
+</html>
